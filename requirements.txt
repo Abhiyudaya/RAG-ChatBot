@@ -1,0 +1,12 @@
+# Core
+numpy>=1.24
+
+# Embeddings (local, free, no API key). Pulls in torch on first install.
+sentence-transformers>=2.2
+
+# LLM generation via any OpenAI-compatible provider
+# (OpenAI, OpenRouter, Groq, Together, DeepSeek, Fireworks, Ollama, LM Studio, Gemini...)
+openai>=1.0
+
+# PDF loading (optional -- only needed if you ingest .pdf files)
+pypdf>=4.0
