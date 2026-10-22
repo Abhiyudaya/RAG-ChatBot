@@ -1,0 +1,16 @@
+[
+  {"question": "How long is a password reset link valid?", "answer": "30 minutes"},
+  {"question": "I forgot my login credentials, how do I recover access to my account?", "answer": "Forgot"},
+  {"question": "Who do I contact if I can't log in on my first day?", "answer": "ext. 4500"},
+  {"question": "How soon is a new hire's account set up?", "answer": "one business day of"},
+  {"question": "What is the overage charge per compute-hour?", "answer": "0.08 USD per compute-hour"},
+  {"question": "How much does extra storage cost beyond the Starter plan?", "answer": "0.12 USD per GB"},
+  {"question": "How much cheaper are yearly subscriptions?", "answer": "15 percent discount"},
+  {"question": "In what format are invoices provided?", "answer": "PDF"},
+  {"question": "How fast does Priority support respond?", "answer": "two hours"},
+  {"question": "What is the response target for critical production incidents?", "answer": "one-hour response"},
+  {"question": "How long do deleted files stay in Trash?", "answer": "30 days"},
+  {"question": "How long are backups kept?", "answer": "90 days"},
+  {"question": "Who can view audit logs?", "answer": "administrators only"},
+  {"question": "How long are audit logs retained?", "answer": "one year"}
+]

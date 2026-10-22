@@ -13,14 +13,16 @@ documents and **cite their sources**.
 | 1. Load | `rag/loader.py` | Read `.txt` / `.md` / `.pdf` into plain text |
 | 2. Chunk | `rag/chunker.py` | Split docs into overlapping word-windows |
 | 3. Embed | `rag/embedder.py` | Turn each chunk into a meaning-vector (local, free) |
-| 4. Store + Search | `rag/store.py` | numpy vector DB: semantic, keyword & hybrid search + save/load |
+| 4. Store + Search | `rag/store.py` | numpy vector DB: semantic (cosine), keyword (BM25) & hybrid search + save/load |
 | 5a. Retrieve | `rag/retriever.py` | Embed the query, fetch the top-k chunks |
-| 5b. Augment + Generate | `rag/generator.py` | Build the prompt, call Claude, return a cited answer |
+| 5b. Augment + Generate | `rag/generator.py` | Build the prompt, call the LLM, return a cited answer |
 
-Two CLIs tie it together:
+Entry points:
 
 - `ingest.py` — the **offline indexing phase** (load → chunk → embed → store)
-- `chat.py` — the **online query phase** (retrieve → augment → generate)
+- `chat.py` — the **online query phase** (retrieve → augment → generate) as a CLI
+- `api.py` — the same query phase served over HTTP with **FastAPI**
+- `eval.py` — measures retrieval quality (hit@k, MRR) for each retrieval mode
 
 ## Setup
 
@@ -77,6 +79,52 @@ Assistant: I don't know based on the provided documents.
 That second answer is the whole point: when the context doesn't contain the
 answer, the model says so instead of hallucinating.
 
+## Serve it over HTTP (FastAPI)
+
+```bash
+python ingest.py --docs docs/ --index index/
+uvicorn api:app --port 8000
+```
+
+| Endpoint | What it does |
+|----------|--------------|
+| `GET /health` | Liveness check + number of indexed chunks |
+| `POST /search` | Retrieval only — no LLM call, no API key needed |
+| `POST /ask` | Retrieve + generate a cited answer |
+
+```bash
+curl -s localhost:8000/ask -H 'Content-Type: application/json' \
+  -d '{"question": "how long is a password reset link valid?", "k": 4, "mode": "hybrid"}'
+```
+
+The response contains the `answer` plus the numbered `sources` (file, score,
+text) that its `[1]`, `[2]` citations refer to. Interactive docs are at
+`http://localhost:8000/docs`.
+
+## Run it in Docker
+
+```bash
+docker compose up --build
+```
+
+The image installs CPU-only PyTorch, bakes in the `all-MiniLM-L6-v2` embedding
+model and builds the index from `docs/` at build time, so retrieval runs fully
+offline inside the container. Pass `LLM_API_KEY` / `LLM_BASE_URL` /
+`LLM_MODEL` through your shell or a `.env` file to enable `/ask`.
+
+## Evaluate retrieval
+
+```bash
+python eval.py --k 3
+```
+
+`eval_set.json` holds labelled questions about the sample FAQ — a mix of
+exact-term questions ("0.08 USD per compute-hour") and paraphrased ones ("how
+much cheaper are yearly subscriptions?"). For each retrieval mode, `eval.py`
+reports **hit@k** (did a top-k chunk contain the answer?) and **MRR** (how high
+was it ranked?). No LLM key is needed. Add questions for your own documents to
+get numbers that mean something for your corpus.
+
 ## Things to try (to *feel* how each part matters)
 
 - **Change retrieval mode:** `python chat.py --mode semantic` vs `--mode keyword`
@@ -96,15 +144,16 @@ This is deliberately minimal and honest about it. To productionize:
 - **Vector store:** swap `store.py`'s brute-force search for FAISS, Chroma,
   pgvector, Pinecone, Weaviate, Qdrant, or Milvus (they use ANN indexes for
   scale). The `add` / `search` / `save` / `load` interface stays the same.
-- **Hybrid search:** replace the toy keyword scorer with real BM25
-  (e.g. `rank_bm25`) or your DB's built-in full-text search.
+- **Hybrid search:** BM25 is implemented from scratch in `store.py`; at scale,
+  use your DB's built-in full-text search, and consider reciprocal rank fusion
+  instead of a weighted score blend.
 - **Re-ranking:** retrieve a larger set (say top 20), then re-order with a
   cross-encoder re-ranker and keep the best 4. This is one of the biggest
   quality wins.
-- **Evaluation:** measure retrieval (did the right chunk come back?) separately
-  from generation (is the answer faithful to the chunks?).
-- **Serving:** wrap `chat.py`'s logic in a FastAPI endpoint with streaming; add
-  logging/tracing, caching, and guardrails.
+- **Evaluation:** `eval.py` measures retrieval; also measure generation
+  (is the answer faithful to the chunks?), e.g. with an LLM judge.
+- **Serving:** `api.py` is a starting point; add streaming responses,
+  logging/tracing, caching, auth, and guardrails.
 
 ## Requirements
 

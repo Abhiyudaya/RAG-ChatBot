@@ -8,7 +8,7 @@ Loads the index built by ingest.py and answers your questions in a loop:
 For each question it:
     1. retrieves the most relevant chunks,
     2. shows you which sources were retrieved (so retrieval is never a black box),
-    3. asks Claude to answer grounded in those chunks, with citations.
+    3. asks the LLM to answer grounded in those chunks, with citations.
 
 Requires an LLM key (any OpenAI-compatible provider):  export LLM_API_KEY=...
 See rag/generator.py for LLM_BASE_URL / LLM_MODEL settings per provider.
@@ -30,7 +30,7 @@ def main():
         choices=["semantic", "keyword", "hybrid"],
         help="Retrieval strategy. Try switching this to feel the difference.",
     )
-    parser.add_argument("--model", default=None, help="Override the Claude model.")
+    parser.add_argument("--model", default=None, help="Override the LLM model.")
     parser.add_argument("--show-chunks", action="store_true", help="Print retrieved chunk text.")
     args = parser.parse_args()
 

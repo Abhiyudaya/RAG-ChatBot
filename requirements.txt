@@ -10,3 +10,7 @@ openai>=1.0
 
 # PDF loading (optional -- only needed if you ingest .pdf files)
 pypdf>=4.0
+
+# HTTP API (api.py)
+fastapi>=0.110
+uvicorn[standard]>=0.29
